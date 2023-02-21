@@ -48,7 +48,9 @@ class Scatter extends React.Component {
     }
     
   addKeys() {
+
     
+        
     let dataset = this.state.data;
     
     let keys = Object.keys(dataset)
@@ -56,11 +58,16 @@ class Scatter extends React.Component {
     
     var graphSelect = d3.select('#SelectionBox')
                           .on('change', selectionChange)
+                    
+    var chartType = d3.select("#ChartType")
+                    .on('change', selectionChange)
     
     function selectionChange() {
       let item = graphSelect.property('value');
-      clearOldChart();
-      addNewChart(dataset[item], item);
+      clearOldChart();      
+
+      let type = chartType.property('value')
+      addNewChart(dataset[item], item, type);
     }
     
     keys.forEach(item => {
@@ -69,33 +76,33 @@ class Scatter extends React.Component {
         .text(item);
   
     });    
-    
+
     
     function clearOldChart() {
       d3.selectAll("svg").remove()
     }
   
-    function addNewChart(dataset, name) {
+    function addNewChart(dataset, name, type) {
       
         let h = 400;
         let w = 800;
         let margin = 80;
-      
-        console.log(dataset)
+
+        //console.log(dataset)
   
   /*      d3.select("#ScatterPlot")
             .append("div")
             .attr("id", "tooltip")
             .style("visibility", "hidden")*/
-        
+
         let svg = d3.select("#LogGraph")
                     .append("svg")
                     .attr("height", h)
                     .attr("width", w)
         
         let yScale = d3.scaleLinear()
-                      .domain([d3.min(dataset, (d) => Number(d.value)), 
-                               d3.max(dataset, (d) => Number(d.value))])
+                      .domain([d3.min(dataset, (d) => Number(d.value)-1), 
+                               d3.max(dataset, (d) => Number(d.value)+1)])
                       .range([h-margin, 0+margin]);
         let yAxis = d3.axisLeft(yScale);
   
@@ -107,6 +114,7 @@ class Scatter extends React.Component {
         
         
         function getTime(t) {
+            // TODO: Add Date
             let h = Number(t.slice(0,2))
             let m = Number(t.slice(3,5));
             let s = Number(t.slice(6,8));
@@ -157,7 +165,8 @@ class Scatter extends React.Component {
     }
         
   */
-        svg.selectAll("circle")
+        if(type === "scatter") {
+            svg.selectAll("circle")
             .data(dataset)
             .enter()
             .append("circle")
@@ -167,14 +176,30 @@ class Scatter extends React.Component {
             .attr("r", 1)
             .attr("stroke", "red")
             //.on("mouseover", mouseover)
-            //.on("mouseleave", mouseleave)
+            //.on("mouseleave", mouseleave)*/
+        } else if (type === "bar") {
+
+            let datapoints = dataset.length;
+            let barsize = (w-margin)/datapoints;
+
+            svg.selectAll("rect")
+            .data(dataset)
+            .enter()
+            .append("rect")
+            .attr("class", "bar")
+            .attr("x", (d) => xScale(getTime(d.time)))
+            .attr("y", (d, i) => yScale(Number(d.value)))
+            .attr("width", barsize)
+            .attr("height", (d) => h-margin-yScale(Number(d.value)))
+            //.attr("stroke", "red")
+        }
         
         svg.append("text")
             .text(name)
             .attr("x", 0)
             .attr("y", h/2)
             .attr("transform","rotate(-90 20 " + h/2 + ")")
-  
+
     }
   }
     
@@ -185,10 +210,15 @@ class Scatter extends React.Component {
     }
     
     render() {
+        // TODO: Add multiple y-axis to draw overlay graphs
         return(
             <div id="LogGraph">
                 <h1 id="title">Token2Log</h1>
                 <h4>Parameteric Visualization</h4>
+                <select id="ChartType" defaultValue="scatter">
+                  <option value="scatter" >Scatter Plot</option>
+                  <option value="bar" >Bar Graph</option>
+                </select><br/>
                 <select id="SelectionBox" defaultValue="__DEFAULT__">
                   <option value="__DEFAULT__" disabled>Select parameter</option>
                 </select>
